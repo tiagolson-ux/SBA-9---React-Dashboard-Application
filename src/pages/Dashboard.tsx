@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TaskForm from "../features/tasks/TaskForm";
 import TaskList from "../features/tasks/TaskList";
 import TaskStats from "../features/tasks/TaskStats";
@@ -7,10 +7,29 @@ import { initialTasks } from "../features/tasks/taskData";
 import type { Task } from "../features/tasks/types";
 import type { TaskFilter } from "../features/tasks/filterTypes";
 
+// Note to self: This key is where tasks will be stored in the browser.
+const STORAGE_KEY = "taskdashboard.tasks";
+
 // Note to self: Dashboard page is the home screen summary area.
 export default function Dashboard() {
   // Note to self: tasks state lives here so it can be shared by TaskForm and TaskList
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+  // Note to self: Lazy initializer runs once on first render.
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return initialTasks;
+
+  try {
+    const parsed = JSON.parse(saved) as Task[];
+    return parsed;
+  } catch {
+    // Note to self: If saved data is corrupted, fall back to initial tasks.
+    return initialTasks;
+  }
+});
+  // Note to self: Save tasks to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  }, [tasks]);
 
   // Note to self: filter state controls which tasks we show
   const [filter, setFilter] = useState<TaskFilter>("all");
